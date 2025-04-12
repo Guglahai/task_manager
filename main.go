@@ -1,36 +1,71 @@
 package main
 
 import (
+	"log"
 	"net/http"
-	"slices"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-type Task struct {
-	ID   string `json:"id"`
-	Task string `json:"task"`
+var db *gorm.DB
+
+func initDB() {
+	dsn := "host=localhost user=postgres password=1103 dbname=postgres port=5432 sslmode=disable"
+	var err error
+
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Could not connect to database: %s", err)
+	}
+
+	if err := db.AutoMigrate(&Task{}); err != nil {
+		log.Fatalf("Could not migrate: %s", err)
+	}
 }
 
-var tasks = []Task{}
+type Task struct {
+	ID      string `gorm:"primaryKey" json:"id"`
+	Task    string `json:"task"`
+	Is_done bool   `json:"is_done"`
+}
+
+type TaskRequest struct {
+	Task    string `json:"task"`
+	Is_done bool   `json:"is_done"`
+}
+
+// Find, Create, Update, Delete
 
 func getTasks(c echo.Context) error {
+	var tasks []Task
+
+	if err := db.Find(&tasks).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not get tasks"})
+	}
+
 	return c.JSON(http.StatusOK, tasks)
 }
 
 func postTasks(c echo.Context) error {
-	var req Task
+	var req TaskRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 	}
 	task := Task{
-		ID:   uuid.NewString(),
-		Task: req.Task,
+		ID:      uuid.NewString(),
+		Task:    req.Task,
+		Is_done: req.Is_done,
 	}
-	tasks = append(tasks, task)
-	return c.JSON(http.StatusCreated, tasks)
+
+	if err := db.Create(&task).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not add tasks"})
+	}
+
+	return c.JSON(http.StatusCreated, task)
 }
 
 func patchTasks(c echo.Context) error {
@@ -40,37 +75,44 @@ func patchTasks(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 	}
-	for i, task := range tasks {
-		if task.ID == id {
-			tasks[i].Task = req.Task
-			return c.JSON(http.StatusOK, tasks[i])
-		}
+
+	var task Task
+	if err := db.First(&task, "id = ?", id).Error; err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Could not find task"})
 	}
-	return c.JSON(http.StatusBadRequest, map[string]string{"error": "Task not found"})
+
+	task.Task = req.Task
+	task.Is_done = req.Is_done
+
+	if err := db.Save(&task).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not update tasks"})
+	}
+
+	return c.JSON(http.StatusOK, task)
 }
 
 func deleteTasks(c echo.Context) error {
 	id := c.Param("id")
 
-	for i, task := range tasks {
-		if task.ID == id {
-			tasks = slices.Delete(tasks, i, i+1)
-			return c.NoContent(http.StatusNoContent)
-		}
+	if err := db.Delete(&Task{}, "id = ?", id).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not delete tasks"})
 	}
-	return c.JSON(http.StatusBadRequest, id)
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 func main() {
+	initDB()
+
 	e := echo.New()
 
 	e.Use(middleware.CORS())
 	e.Use(middleware.Logger())
 
-	e.GET("/", getTasks)
-	e.POST("/", postTasks)
-	e.PATCH("/", patchTasks)
-	e.DELETE("/:id", deleteTasks)
+	e.GET("/tasks", getTasks)
+	e.POST("/tasks", postTasks)
+	e.PATCH("/tasks/:id", patchTasks)
+	e.DELETE("/tasks/:id", deleteTasks)
 
 	e.Start("localhost:8080")
 }
