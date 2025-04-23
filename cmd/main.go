@@ -5,6 +5,7 @@ import (
 	"task_manager/internal/db"
 	"task_manager/internal/handlers"
 	"task_manager/internal/taskService"
+	"task_manager/internal/web/tasks"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -25,10 +26,10 @@ func main() {
 	e.Use(middleware.CORS())
 	e.Use(middleware.Logger())
 
-	e.GET("/tasks", taskHandlers.GetTasks)
-	e.POST("/tasks", taskHandlers.PostTasks)
-	e.PATCH("/tasks/:id", taskHandlers.PatchTasks)
-	e.DELETE("/tasks/:id", taskHandlers.DeleteTasks)
+	strictHandler := tasks.NewStrictHandler(taskHandlers, nil)
+	tasks.RegisterHandlers(e, strictHandler)
 
-	e.Start("localhost:8080")
+	if e.Start("localhost:8080"); err != nil {
+		log.Fatalf("failed to start with err: %v", err)
+	}
 }

@@ -1,0 +1,96 @@
+openapi: 3.0.0
+info:
+  title: API
+  version: 1.0.0
+paths:
+  /tasks:
+    get:
+      summary: Get all tasks
+      tags:
+        - tasks
+      responses:
+        '200':
+          description: A list of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+
+    post:
+      summary: Create a new task
+      tags:
+        - tasks
+      requestBody:
+        description: The task to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Task'
+      responses:
+        '201':
+          description: The created task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+  /tasks/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: 
+        type: string
+      allowReserved: true
+    patch:
+      summary: Update a task
+      tags:
+        - tasks
+      requestBody:
+        description: The task to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Task'
+      responses:
+        '200':
+          description: The updated task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+    delete:
+      summary: Delete a task
+      tags:
+        - tasks
+      responses:
+        '204':
+          description: Successfully deleted
+              
+components:
+  schemas:
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+          x-go-type-import:
+            path: github.com/google/uuid
+        task:
+          type: string
+        is_done:
+          type: boolean
+    TaskRequest:
+      type: object
+      properties:
+        task:
+          type: string
+        is_done:
+          type: boolean
