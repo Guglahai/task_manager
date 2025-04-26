@@ -88,5 +88,5 @@ func (h *TaskHandler) DeleteTasksId(_ context.Context, request tasks.DeleteTasks
 		return nil, err
 	}
 
-	return nil, nil
+	return tasks.DeleteTasksId204Response{}, nil
 }

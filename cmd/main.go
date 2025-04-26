@@ -29,7 +29,7 @@ func main() {
 	strictHandler := tasks.NewStrictHandler(taskHandlers, nil)
 	tasks.RegisterHandlers(e, strictHandler)
 
-	if e.Start("localhost:8080"); err != nil {
+	if err := e.Start("localhost:8080"); err != nil {
 		log.Fatalf("failed to start with err: %v", err)
 	}
 }
