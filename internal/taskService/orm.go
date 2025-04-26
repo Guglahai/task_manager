@@ -7,8 +7,3 @@ type Task struct {
 	Task    string    `json:"task"`
 	Is_done bool      `json:"is_done"`
 }
-
-type TaskRequest struct {
-	Task    string `json:"task"`
-	Is_done bool   `json:"is_done"`
-}

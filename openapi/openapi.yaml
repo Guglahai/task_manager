@@ -71,6 +71,75 @@ paths:
       responses:
         '204':
           description: Successfully deleted
+
+  /users:
+    get:
+      summary: Get all users
+      tags:
+        - users
+      responses:
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      summary: Create a new user
+      tags:
+        - users
+      requestBody:
+        description: A user to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: The created user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      
+  /users/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: 
+        type: string
+      allowReserved: true
+    patch:
+      summary: Update a user
+      tags:
+        - users
+      requestBody:
+        description: A user to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: The updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    delete:
+      summary: Delete a user
+      tags:
+        - users
+      responses:
+        '204':
+          description: Successfully deleted
+      
               
 components:
   schemas:
@@ -94,3 +163,25 @@ components:
           type: string
         is_done:
           type: boolean
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+          x-go-type-import:
+            path: github.com/google/uuid
+        email:
+          type: string
+        password:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time

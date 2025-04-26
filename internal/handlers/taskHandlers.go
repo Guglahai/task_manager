@@ -39,7 +39,7 @@ func (h *TaskHandler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject)
 func (h *TaskHandler) PostTasks(_ context.Context, request tasks.PostTasksRequestObject) (tasks.PostTasksResponseObject, error) {
 	taskRequest := request.Body
 
-	taskToCreate := taskService.TaskRequest{
+	taskToCreate := taskService.Task{
 		Task:    *taskRequest.Task,
 		Is_done: *taskRequest.IsDone,
 	}
@@ -62,7 +62,7 @@ func (h *TaskHandler) PatchTasksId(_ context.Context, request tasks.PatchTasksId
 	taskRequest := request.Body
 	taskID := request.Id
 
-	taskToUpdate := taskService.TaskRequest{
+	taskToUpdate := taskService.Task{
 		Task:    *taskRequest.Task,
 		Is_done: *taskRequest.IsDone,
 	}
