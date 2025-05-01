@@ -45,6 +45,26 @@ paths:
       schema: 
         type: string
       allowReserved: true
+
+    post:
+      summary: Create a new task for user by ID
+      tags:
+        - tasks
+      requestBody:
+        description: The task to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Task'
+      responses:
+        '201':
+          description: The created task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
     patch:
       summary: Update a task
       tags:
@@ -113,6 +133,21 @@ paths:
       schema: 
         type: string
       allowReserved: true
+
+    get:
+      summary: Get tasks by user ID
+      tags:
+        - users
+      responses:
+        '200':
+          description: A list of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+
     patch:
       summary: Update a user
       tags:
@@ -156,13 +191,9 @@ components:
           type: string
         is_done:
           type: boolean
-    TaskRequest:
-      type: object
-      properties:
-        task:
+        user_id:
           type: string
-        is_done:
-          type: boolean
+
     User:
       type: object
       properties:

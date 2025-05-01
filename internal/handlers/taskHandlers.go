@@ -43,7 +43,7 @@ func (h *TaskHandler) PostTasks(_ context.Context, request tasks.PostTasksReques
 		Task:    *taskRequest.Task,
 		Is_done: *taskRequest.IsDone,
 	}
-	createdTask, err := h.service.CreateTask(taskToCreate)
+	createdTask, err := h.service.CreateTask(taskToCreate, *taskRequest.UserId)
 
 	if err != nil {
 		return nil, err
@@ -53,6 +53,29 @@ func (h *TaskHandler) PostTasks(_ context.Context, request tasks.PostTasksReques
 		Id:     &createdTask.ID,
 		Task:   &createdTask.Task,
 		IsDone: &createdTask.Is_done,
+	}
+
+	return response, nil
+}
+
+func (h *TaskHandler) PostTasksId(_ context.Context, request tasks.PostTasksIdRequestObject) (tasks.PostTasksIdResponseObject, error) {
+	taskRequest := request.Body
+
+	taskToCreate := taskService.Task{
+		Task:    *taskRequest.Task,
+		Is_done: *taskRequest.IsDone,
+	}
+	createdTask, err := h.service.CreateTask(taskToCreate, request.Id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := tasks.PostTasksId201JSONResponse{
+		Id:     &createdTask.ID,
+		Task:   &createdTask.Task,
+		IsDone: &createdTask.Is_done,
+		UserId: &createdTask.UserID,
 	}
 
 	return response, nil

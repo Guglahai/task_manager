@@ -1,6 +1,7 @@
 package userService
 
 import (
+	"task_manager/internal/taskService"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,6 +11,7 @@ type UserService interface {
 	CreateUser(userReq User) (User, error)
 	GetAllUsers() ([]User, error)
 	GetUserByID(id string) (User, error)
+	GetTasksForUser(userID string) ([]taskService.Task, error)
 	UpdateUser(id string, userReq User) (User, error)
 	DeleteUser(id string) error
 }
@@ -43,6 +45,10 @@ func (s *userService) GetAllUsers() ([]User, error) {
 
 func (s *userService) GetUserByID(id string) (User, error) {
 	return s.repo.GetUserByID(id)
+}
+
+func (s *userService) GetTasksForUser(userID string) ([]taskService.Task, error) {
+	return s.repo.GetTasksByUserID(userID)
 }
 
 func (s *userService) UpdateUser(id string, userReq User) (User, error) {
