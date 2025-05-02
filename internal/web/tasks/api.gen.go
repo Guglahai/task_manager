@@ -29,9 +29,6 @@ type PostTasksJSONRequestBody = Task
 // PatchTasksIdJSONRequestBody defines body for PatchTasksId for application/json ContentType.
 type PatchTasksIdJSONRequestBody = Task
 
-// PostTasksIdJSONRequestBody defines body for PostTasksId for application/json ContentType.
-type PostTasksIdJSONRequestBody = Task
-
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Get all tasks
@@ -46,9 +43,9 @@ type ServerInterface interface {
 	// Update a task
 	// (PATCH /tasks/{id})
 	PatchTasksId(ctx echo.Context, id string) error
-	// Create a new task for user by ID
-	// (POST /tasks/{id})
-	PostTasksId(ctx echo.Context, id string) error
+	// Get tasks by user ID
+	// (GET /users/{id}/tasks)
+	GetTasksByUserID(ctx echo.Context, id string) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -106,8 +103,8 @@ func (w *ServerInterfaceWrapper) PatchTasksId(ctx echo.Context) error {
 	return err
 }
 
-// PostTasksId converts echo context to params.
-func (w *ServerInterfaceWrapper) PostTasksId(ctx echo.Context) error {
+// GetTasksByUserID converts echo context to params.
+func (w *ServerInterfaceWrapper) GetTasksByUserID(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id string
@@ -118,7 +115,7 @@ func (w *ServerInterfaceWrapper) PostTasksId(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostTasksId(ctx, id)
+	err = w.Handler.GetTasksByUserID(ctx, id)
 	return err
 }
 
@@ -154,7 +151,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/tasks", wrapper.PostTasks)
 	router.DELETE(baseURL+"/tasks/:id", wrapper.DeleteTasksId)
 	router.PATCH(baseURL+"/tasks/:id", wrapper.PatchTasksId)
-	router.POST(baseURL+"/tasks/:id", wrapper.PostTasksId)
+	router.GET(baseURL+"/users/:id/tasks", wrapper.GetTasksByUserID)
 
 }
 
@@ -225,20 +222,19 @@ func (response PatchTasksId200JSONResponse) VisitPatchTasksIdResponse(w http.Res
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostTasksIdRequestObject struct {
-	Id   string `json:"id"`
-	Body *PostTasksIdJSONRequestBody
+type GetTasksByUserIDRequestObject struct {
+	Id string `json:"id"`
 }
 
-type PostTasksIdResponseObject interface {
-	VisitPostTasksIdResponse(w http.ResponseWriter) error
+type GetTasksByUserIDResponseObject interface {
+	VisitGetTasksByUserIDResponse(w http.ResponseWriter) error
 }
 
-type PostTasksId201JSONResponse Task
+type GetTasksByUserID200JSONResponse []Task
 
-func (response PostTasksId201JSONResponse) VisitPostTasksIdResponse(w http.ResponseWriter) error {
+func (response GetTasksByUserID200JSONResponse) VisitGetTasksByUserIDResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
+	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -257,9 +253,9 @@ type StrictServerInterface interface {
 	// Update a task
 	// (PATCH /tasks/{id})
 	PatchTasksId(ctx context.Context, request PatchTasksIdRequestObject) (PatchTasksIdResponseObject, error)
-	// Create a new task for user by ID
-	// (POST /tasks/{id})
-	PostTasksId(ctx context.Context, request PostTasksIdRequestObject) (PostTasksIdResponseObject, error)
+	// Get tasks by user ID
+	// (GET /users/{id}/tasks)
+	GetTasksByUserID(ctx context.Context, request GetTasksByUserIDRequestObject) (GetTasksByUserIDResponseObject, error)
 }
 
 type StrictHandlerFunc = strictecho.StrictEchoHandlerFunc
@@ -382,31 +378,25 @@ func (sh *strictHandler) PatchTasksId(ctx echo.Context, id string) error {
 	return nil
 }
 
-// PostTasksId operation middleware
-func (sh *strictHandler) PostTasksId(ctx echo.Context, id string) error {
-	var request PostTasksIdRequestObject
+// GetTasksByUserID operation middleware
+func (sh *strictHandler) GetTasksByUserID(ctx echo.Context, id string) error {
+	var request GetTasksByUserIDRequestObject
 
 	request.Id = id
 
-	var body PostTasksIdJSONRequestBody
-	if err := ctx.Bind(&body); err != nil {
-		return err
-	}
-	request.Body = &body
-
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PostTasksId(ctx.Request().Context(), request.(PostTasksIdRequestObject))
+		return sh.ssi.GetTasksByUserID(ctx.Request().Context(), request.(GetTasksByUserIDRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostTasksId")
+		handler = middleware(handler, "GetTasksByUserID")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PostTasksIdResponseObject); ok {
-		return validResponse.VisitPostTasksIdResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetTasksByUserIDResponseObject); ok {
+		return validResponse.VisitGetTasksByUserIDResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}

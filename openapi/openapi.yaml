@@ -46,25 +46,6 @@ paths:
         type: string
       allowReserved: true
 
-    post:
-      summary: Create a new task for user by ID
-      tags:
-        - tasks
-      requestBody:
-        description: The task to create
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Task'
-      responses:
-        '201':
-          description: The created task
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Task'
-
     patch:
       summary: Update a task
       tags:
@@ -91,6 +72,30 @@ paths:
       responses:
         '204':
           description: Successfully deleted
+
+  /users/{id}/tasks:
+    get:
+      operationId: GetTasksByUserID
+      tags:
+        - tasks
+      summary: Get tasks by user ID
+      description: Returns a list of tasks for the specified user
+      parameters:
+        - name: id
+          in: path
+          description: ID of the user to get tasks for
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
 
   /users:
     get:
@@ -134,20 +139,6 @@ paths:
         type: string
       allowReserved: true
 
-    get:
-      summary: Get tasks by user ID
-      tags:
-        - users
-      responses:
-        '200':
-          description: A list of tasks
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Task'
-
     patch:
       summary: Update a user
       tags:
@@ -174,7 +165,6 @@ paths:
       responses:
         '204':
           description: Successfully deleted
-      
               
 components:
   schemas:

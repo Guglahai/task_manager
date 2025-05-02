@@ -3,21 +3,26 @@ package handlers
 import (
 	"context"
 	"task_manager/internal/taskService"
+	"task_manager/internal/userService"
 	"task_manager/internal/web/tasks"
 
 	"github.com/google/uuid"
 )
 
 type TaskHandler struct {
-	service taskService.TaskService
+	taskService taskService.TaskService
+	userService userService.UserService
 }
 
-func NewTaskHandler(s taskService.TaskService) *TaskHandler {
-	return &TaskHandler{service: s}
+func NewTaskHandler(ts taskService.TaskService, us userService.UserService) *TaskHandler {
+	return &TaskHandler{
+		taskService: ts,
+		userService: us,
+	}
 }
 
 func (h *TaskHandler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject) (tasks.GetTasksResponseObject, error) {
-	allTasks, err := h.service.GetAllTasks()
+	allTasks, err := h.taskService.GetAllTasks()
 	if err != nil {
 		return nil, err
 	}
@@ -36,6 +41,27 @@ func (h *TaskHandler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject)
 	return respone, nil
 }
 
+func (h *TaskHandler) GetTasksByUserID(_ context.Context, request tasks.GetTasksByUserIDRequestObject) (tasks.GetTasksByUserIDResponseObject, error) {
+	userTasks, err := h.userService.GetTasksForUser(request.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	respone := tasks.GetTasksByUserID200JSONResponse{}
+
+	for _, tsk := range userTasks {
+		task := tasks.Task{
+			Id:     (*uuid.UUID)(&tsk.ID),
+			Task:   &tsk.Task,
+			IsDone: &tsk.Is_done,
+			UserId: &tsk.UserID,
+		}
+		respone = append(respone, task)
+	}
+
+	return respone, nil
+}
+
 func (h *TaskHandler) PostTasks(_ context.Context, request tasks.PostTasksRequestObject) (tasks.PostTasksResponseObject, error) {
 	taskRequest := request.Body
 
@@ -43,7 +69,7 @@ func (h *TaskHandler) PostTasks(_ context.Context, request tasks.PostTasksReques
 		Task:    *taskRequest.Task,
 		Is_done: *taskRequest.IsDone,
 	}
-	createdTask, err := h.service.CreateTask(taskToCreate, *taskRequest.UserId)
+	createdTask, err := h.taskService.CreateTask(taskToCreate, *taskRequest.UserId)
 
 	if err != nil {
 		return nil, err
@@ -58,29 +84,6 @@ func (h *TaskHandler) PostTasks(_ context.Context, request tasks.PostTasksReques
 	return response, nil
 }
 
-func (h *TaskHandler) PostTasksId(_ context.Context, request tasks.PostTasksIdRequestObject) (tasks.PostTasksIdResponseObject, error) {
-	taskRequest := request.Body
-
-	taskToCreate := taskService.Task{
-		Task:    *taskRequest.Task,
-		Is_done: *taskRequest.IsDone,
-	}
-	createdTask, err := h.service.CreateTask(taskToCreate, request.Id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	response := tasks.PostTasksId201JSONResponse{
-		Id:     &createdTask.ID,
-		Task:   &createdTask.Task,
-		IsDone: &createdTask.Is_done,
-		UserId: &createdTask.UserID,
-	}
-
-	return response, nil
-}
-
 func (h *TaskHandler) PatchTasksId(_ context.Context, request tasks.PatchTasksIdRequestObject) (tasks.PatchTasksIdResponseObject, error) {
 	taskRequest := request.Body
 	taskID := request.Id
@@ -89,7 +92,7 @@ func (h *TaskHandler) PatchTasksId(_ context.Context, request tasks.PatchTasksId
 		Task:    *taskRequest.Task,
 		Is_done: *taskRequest.IsDone,
 	}
-	updatedTask, err := h.service.UpdateTask(taskID, taskToUpdate)
+	updatedTask, err := h.taskService.UpdateTask(taskID, taskToUpdate)
 
 	if err != nil {
 		return nil, err
@@ -107,7 +110,7 @@ func (h *TaskHandler) PatchTasksId(_ context.Context, request tasks.PatchTasksId
 func (h *TaskHandler) DeleteTasksId(_ context.Context, request tasks.DeleteTasksIdRequestObject) (tasks.DeleteTasksIdResponseObject, error) {
 	taskID := request.Id
 
-	if err := h.service.DeleteTask(taskID); err != nil {
+	if err := h.taskService.DeleteTask(taskID); err != nil {
 		return nil, err
 	}
 

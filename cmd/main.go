@@ -21,13 +21,13 @@ func main() {
 
 	e := echo.New()
 
-	taskRepo := taskService.NewTaskRepository(database)
-	taskServices := taskService.NewTaskService(taskRepo)
-	taskHandlers := handlers.NewTaskHandler(taskServices)
-
 	userRepo := userService.NewUserRepository(database)
 	userServices := userService.NewUserService(userRepo)
 	userHandlers := handlers.NewUserHandler(userServices)
+
+	taskRepo := taskService.NewTaskRepository(database)
+	taskServices := taskService.NewTaskService(taskRepo)
+	taskHandlers := handlers.NewTaskHandler(taskServices, userServices)
 
 	e.Use(middleware.CORS())
 	e.Use(middleware.Logger())
